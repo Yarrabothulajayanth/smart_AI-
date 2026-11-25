@@ -1,0 +1,29 @@
+# Python runtime files
+__pycache__/
+*.py[cod]
+backend/venv/
+.venv/
+venv/
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+
+# Local databases and backup files
+backend/*.db*
+backend/*.sqlite*
+backend/backups/
+
+# Frontend build and package files
+frontend/node_modules/
+frontend/dist/
+
+# Logs and test artifacts
+*.log
+.pytest_cache/
+.coverage
+htmlcov/
