@@ -12,6 +12,10 @@ from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
+from app.config import load_backend_environment
+
+load_backend_environment()
+
 from app.auth import auth_configuration_status, require_owner
 from app.database import (
     DATABASE_PATH,

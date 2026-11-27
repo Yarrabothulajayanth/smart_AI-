@@ -46,34 +46,27 @@ already installed, there is no need to reinstall them. From PowerShell:
 
 ```powershell
 Set-Location .\backend
-$env:SMARTBILL_ENV = "development"
-$env:SMARTBILL_OWNER_USERNAME = "owner"
-$env:SMARTBILL_OWNER_PASSWORD_HASH = (& .\venv\Scripts\python.exe -c "import getpass; from app.auth import hash_password; print(hash_password(getpass.getpass('Owner password: ')))")
-$env:SMARTBILL_SESSION_SECRET = (& .\venv\Scripts\python.exe -c "import secrets; print(secrets.token_urlsafe(48))")
-$env:SMARTBILL_COOKIE_SECURE = "false"
-$env:SMARTBILL_CORS_ORIGINS = "http://127.0.0.1:5173"
-$env:SMARTBILL_TIMEZONE = "Asia/Kolkata"
-.\venv\Scripts\python.exe -m uvicorn app.main:app --reload
+.\venv\Scripts\python.exe -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-The password prompt is hidden. Put the generated hash—not the plain password—in
-`SMARTBILL_OWNER_PASSWORD_HASH`. A legacy plain
-`SMARTBILL_OWNER_PASSWORD` is accepted only in development for transition; it
-is rejected in production.
+Owner credentials are loaded from `backend/.env`; the password is stored as a
+PBKDF2-SHA256 hash and the session signing secret is generated and persisted
+automatically on first startup. Keep this ignored file private. The owner
+username and password are configured once and remain unchanged across restarts.
 
 In another PowerShell window:
 
 ```powershell
 Set-Location .\frontend
 if (-not (Test-Path .env)) { Copy-Item .env.example .env }
-npm ci
-npm run dev -- --host 127.0.0.1
+npm run dev -- --host localhost
 ```
 
-Open `http://127.0.0.1:5173`. The frontend `.env` contains only the public API
-base URL; never put passwords, session secrets, or AI keys in frontend
-configuration. If the frontend dependencies are already present, `npm ci` is
-only needed when setting up a clean copy.
+Open `http://localhost:5173`. Vite proxies `/api` requests to FastAPI so the
+frontend and API share one browser origin and the HTTP-only session cookie
+works without frontend credentials or cross-origin cookie configuration.
+`frontend/.env` contains only the public `/api` path. Never put passwords,
+session secrets, or AI keys in frontend configuration.
 
 Backend routes are available at `http://127.0.0.1:8000`; `/docs` is the
 interactive API documentation, `/health` is the liveness check, and `/ready`
@@ -114,11 +107,13 @@ npm run lint
 | `SMARTBILL_AI_CHAT_MODEL` | Optional chat model name. |
 | `SMARTBILL_AI_EMBEDDING_MODEL` | Optional embedding model name for document search. |
 | `SMARTBILL_AI_TIMEOUT_SECONDS` | Provider timeout, from 1 to 120 seconds; defaults to 25. |
-| `VITE_API_BASE_URL` | Public frontend build-time URL of the FastAPI API. |
+| `VITE_API_BASE_URL` | Public frontend API base URL; defaults to `/api` for the Vite proxy. |
 
-Set backend variables in the backend process environment or your host's secret
-manager. Do not commit secret files. The root `.gitignore` excludes local
-environment files, virtual environments, databases, and build output.
+Local backend settings are loaded from `backend/.env`. Do not commit secret
+files. `.gitignore` excludes local environment files, virtual environments,
+databases, and build output. For production, provide secrets through the
+hosting platform's secret manager and use the explicit HTTPS CORS and trusted
+host configuration described below.
 
 ## Database safety, backup, and recovery
 
@@ -338,9 +333,11 @@ costs are additional and unknown until a model/provider is selected.
 
 ## Troubleshooting
 
-- **Owner sign-in is unavailable:** check `SMARTBILL_OWNER_USERNAME`,
-  `SMARTBILL_OWNER_PASSWORD_HASH`, and `SMARTBILL_SESSION_SECRET`. Production
-  does not accept a plain owner password.
+- **Owner sign-in is unavailable:** for local use, check that `backend/.env`
+  contains the configured username and PBKDF2-SHA256 password hash; the session
+  secret is generated automatically. Production secrets must be configured
+  through the hosting platform's secret manager. Plain owner passwords are not
+  accepted.
 - **Database schema is incomplete:** startup does not migrate an existing
   database. Create a verified backup, review the migration, and get approval
   before running `app.database_migrations`.

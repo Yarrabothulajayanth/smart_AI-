@@ -9,6 +9,10 @@ import time
 
 from fastapi import HTTPException, Request, status
 
+from app.config import load_backend_environment
+
+load_backend_environment()
+
 SESSION_COOKIE = "smartbill_owner_session"
 SESSION_SECONDS = 8 * 60 * 60
 CSRF_HEADER = "X-CSRF-Token"
@@ -53,18 +57,11 @@ def _parse_password_hash(value: str) -> tuple[int, bytes, bytes] | None:
     return iterations, salt, digest
 
 
-def _is_production() -> bool:
-    return os.environ.get("SMARTBILL_ENV", "development").strip().lower() == "production"
-
-
 def _auth_configured() -> bool:
     username = os.environ.get("SMARTBILL_OWNER_USERNAME", "").strip()
     password_hash = os.environ.get("SMARTBILL_OWNER_PASSWORD_HASH", "").strip()
-    legacy_password = os.environ.get("SMARTBILL_OWNER_PASSWORD", "")
     secret = os.environ.get("SMARTBILL_SESSION_SECRET", "")
     has_password = _parse_password_hash(password_hash) is not None
-    if not _is_production() and not password_hash:
-        has_password = len(legacy_password) >= 12
     return bool(
         username
         and len(username) <= 80
@@ -164,9 +161,8 @@ def require_owner(request: Request) -> str:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=(
-                "Owner sign-in is not configured. Set "
-                "SMARTBILL_OWNER_USERNAME, SMARTBILL_OWNER_PASSWORD_HASH, and "
-                "SMARTBILL_SESSION_SECRET before using the application."
+                "Owner sign-in is unavailable. Check the owner configuration "
+                "in the backend .env file."
             ),
         )
 
@@ -203,9 +199,6 @@ def owner_login_matches(username: str, password: str) -> bool:
             "sha256", password.encode("utf-8"), salt, iterations
         )
         return hmac.compare_digest(supplied_digest, expected_digest)
-    if not _is_production():
-        legacy_password = os.environ.get("SMARTBILL_OWNER_PASSWORD", "")
-        return hmac.compare_digest(password, legacy_password)
     return False
 
 

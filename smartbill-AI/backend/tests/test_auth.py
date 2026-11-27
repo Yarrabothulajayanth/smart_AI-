@@ -103,12 +103,19 @@ class OwnerAuthenticationTest(unittest.IsolatedAsyncioTestCase):
         login_payload = json.loads(login_body)
         csrf_token = login_payload["csrf_token"]
         self.assertIsInstance(csrf_token, str)
+        self.assertIn("httponly", headers["set-cookie"].lower())
         cookie = headers["set-cookie"].split(";", 1)[0]
         category_status, categories = await self.client.request(
             "GET", "/categories/", headers={"cookie": cookie}
         )
         self.assertEqual(category_status, 200)
         self.assertEqual(categories, [])
+        refresh_status, refreshed_auth = await self.client.request(
+            "GET", "/auth/status", headers={"cookie": cookie}
+        )
+        self.assertEqual(refresh_status, 200)
+        self.assertTrue(refreshed_auth["authenticated"])
+        self.assertEqual(refreshed_auth["csrf_token"], csrf_token)
 
         logout_status, _, logout_headers = await self.client.request_raw(
             "POST",
@@ -155,6 +162,16 @@ class OwnerAuthenticationTest(unittest.IsolatedAsyncioTestCase):
             os.environ,
             {
                 "SMARTBILL_ENV": "production",
+                "SMARTBILL_OWNER_PASSWORD_HASH": "",
+                "SMARTBILL_OWNER_PASSWORD": "a-strong-test-password",
+            },
+        ):
+            self.assertFalse(auth_configuration_status())
+
+    def test_owner_password_hash_is_required_in_development(self) -> None:
+        with patch.dict(
+            os.environ,
+            {
                 "SMARTBILL_OWNER_PASSWORD_HASH": "",
                 "SMARTBILL_OWNER_PASSWORD": "a-strong-test-password",
             },
