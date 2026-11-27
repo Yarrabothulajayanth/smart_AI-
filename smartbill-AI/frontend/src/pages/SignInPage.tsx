@@ -65,11 +65,8 @@ export function SignInPage({
           </form>
         ) : (
           <div className="notice" role="alert">
-            Owner sign-in is not configured. Set
-            {' '}<code>SMARTBILL_OWNER_USERNAME</code>,
-            {' '}<code>SMARTBILL_OWNER_PASSWORD_HASH</code>, and
-            {' '}<code>SMARTBILL_SESSION_SECRET</code> in the backend process
-            environment, then restart FastAPI.
+            Owner sign-in is unavailable. Check the owner configuration in the
+            backend and restart FastAPI.
           </div>
         )}
         <p className="auth-footnote">Only the configured shop owner can access business records.</p>

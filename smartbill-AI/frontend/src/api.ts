@@ -1,9 +1,4 @@
-const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim()
-
-if (!configuredBaseUrl) {
-  throw new Error('VITE_API_BASE_URL is not set. Add it to frontend/.env.')
-}
-
+const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim() || '/api'
 const API_BASE_URL = configuredBaseUrl.replace(/\/+$/, '')
 let csrfToken: string | null = null
 

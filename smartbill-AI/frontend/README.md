@@ -11,6 +11,7 @@ npm ci
 npm run dev -- --host 127.0.0.1
 ```
 
-The backend must be running and configured for the same frontend origin.
-`VITE_API_BASE_URL` is a public API URL only; never put secrets in frontend
-environment variables.
+The backend must be running on `127.0.0.1:8000`. Vite proxies `/api` requests
+to FastAPI, keeping the browser on one origin so session cookies work without
+cross-origin configuration. `VITE_API_BASE_URL` is a public API path only;
+never put secrets in frontend environment variables.
