@@ -122,7 +122,7 @@ def login(
         max_age=SESSION_SECONDS,
         httponly=True,
         secure=_secure_cookie(),
-        samesite="strict",
+        samesite="none",
         path="/",
     )
     return AuthStatus(
