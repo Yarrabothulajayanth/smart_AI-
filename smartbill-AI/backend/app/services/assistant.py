@@ -180,8 +180,10 @@ async def classify_question(
         [
             {"role": "system", "content": instruction},
             {"role": "user", "content": question},
-        ]
-    )
+        ],
+        json_mode=True,
+)
+    
     try:
         decoded = json.loads(raw_plan)
         if not isinstance(decoded, dict):
